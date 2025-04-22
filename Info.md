@@ -15,7 +15,7 @@ API: Конечные точки для работы с посылками (/par
 Порядок действий для запуска проекта:
 
 1. Склонируйте репозиторий проекта на локальную машину:
-git clone <URL_репозитория>
+git clone https://github.com/Alexandr3008/django_project
 
 2. Выполните эти команды в терминале:
 poetry install --only main --no-root  
