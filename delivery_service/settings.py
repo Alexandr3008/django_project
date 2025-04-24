@@ -87,7 +87,7 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_BEAT_SCHEDULE = {
     'calculate-delivery-costs-every-5-minutes': {
         'task': 'parcels.tasks.calculate_delivery_costs',
-        'schedule': crontab(minute='*/5'),
+        'schedule': crontab(minute='*'),
     },
 }
 

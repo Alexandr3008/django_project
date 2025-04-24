@@ -1,7 +1,7 @@
 import logging
 from django.core.cache import cache
 from django.shortcuts import render, redirect
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -10,16 +10,31 @@ from .serializers import ParcelSerializer, ParcelTypeSerializer
 
 logger = logging.getLogger(__name__)
 
+def get_or_create_session_key(request):
+    if not request.session.session_key:
+        request.session.create()
+    return request.session.session_key
+
+def filter_parcels(queryset, request):
+    parcel_type = request.query_params.get("type")
+    cost_calculated = request.query_params.get("cost_calculated")
+
+    if parcel_type:
+        queryset = queryset.filter(type__id=parcel_type)
+    if cost_calculated == "true":
+        queryset = queryset.exclude(delivery_cost__isnull=True)
+    elif cost_calculated == "false":
+        queryset = queryset.filter(delivery_cost__isnull=True)
+
+    return queryset
+
 class RegisterParcelView(APIView):
     """Регистрация новой посылки для текущей сессии."""
     def post(self, request):
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
-
+        session_key = get_or_create_session_key(request)
         data = request.data.copy()
         data['session_key'] = session_key
+
         serializer = ParcelSerializer(data=data)
         if serializer.is_valid():
             parcel = serializer.save(session_key=session_key)
@@ -28,12 +43,10 @@ class RegisterParcelView(APIView):
         logger.error(f"Ошибка регистрации посылки: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ParcelTypeListView(APIView):
+class ParcelTypeListView(generics.ListAPIView):
     """Список всех типов посылок."""
-    def get(self, request):
-        types = ParcelType.objects.all()
-        serializer = ParcelTypeSerializer(types, many=True)
-        return Response(serializer.data)
+    queryset = ParcelType.objects.all()
+    serializer_class = ParcelTypeSerializer
 
 class ParcelListView(APIView):
     """Список посылок текущей сессии с фильтрацией и пагинацией."""
@@ -43,15 +56,7 @@ class ParcelListView(APIView):
             return Response({"detail": "Нет активной сессии"}, status=status.HTTP_400_BAD_REQUEST)
 
         queryset = Parcel.objects.filter(session_key=session_key)
-        type_filter = request.query_params.get('type', None)
-        cost_calculated = request.query_params.get('cost_calculated', None)
-
-        if type_filter:
-            queryset = queryset.filter(type__id=type_filter)
-        if cost_calculated == 'true':
-            queryset = queryset.exclude(delivery_cost__isnull=True)
-        elif cost_calculated == 'false':
-            queryset = queryset.filter(delivery_cost__isnull=True)
+        queryset = filter_parcels(queryset, request)
 
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(queryset, request)
@@ -75,12 +80,9 @@ class ParcelDetailView(APIView):
 
 def register_parcel_web(request):
     """Веб-страница для регистрации посылки."""
-    if request.method == 'POST':
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
+    session_key = get_or_create_session_key(request)
 
+    if request.method == 'POST':
         data = {
             'name': request.POST.get('name'),
             'weight': request.POST.get('weight'),
@@ -101,12 +103,9 @@ def register_parcel_web(request):
 
 def parcel_list_web(request):
     """Веб-страница со списком посылок."""
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-        session_key = request.session.session_key
-
+    session_key = get_or_create_session_key(request)
     parcels = Parcel.objects.filter(session_key=session_key)
+
     type_filter = request.GET.get('type', None)
     cost_calculated = request.GET.get('cost_calculated', None)
 
@@ -131,10 +130,7 @@ def parcel_types_web(request):
 
 def parcel_detail_web(request, parcel_id):
     """Веб-страница с деталями посылки."""
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-        session_key = request.session.session_key
+    session_key = get_or_create_session_key(request)
 
     try:
         parcel = Parcel.objects.get(id=parcel_id, session_key=session_key)
