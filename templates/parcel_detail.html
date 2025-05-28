@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Детали посылки{% endblock %}
+{% block content %}
+    <h2>Детали посылки</h2>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% else %}
+        <p><strong>ID:</strong> {{ parcel.id }}</p>
+        <p><strong>Название:</strong> {{ parcel.name }}</p>
+        <p><strong>Вес (кг):</strong> {{ parcel.weight }}</p>
+        <p><strong>Тип:</strong> {{ parcel.type.name }}</p>
+        <p><strong>Стоимость (USD):</strong> {{ parcel.value }}</p>
+        <p><strong>Доставка (RUB):</strong> {% if parcel.delivery_cost %}{{ parcel.delivery_cost|floatformat:2 }}{% else %}Не рассчитано{% endif %}</p>
+        <p><strong>Дата создания:</strong> {{ parcel.created_at }}</p>
+    {% endif %}
+{% endblock %}
