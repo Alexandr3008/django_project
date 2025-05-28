@@ -47,13 +47,17 @@ def custom_exception_handler(exc, context):
     # Формируем сообщение для логирования
     log_message = str(exc)
     if isinstance(exc, ValidationError):
-        if isinstance(exc.detail, list):
-            log_message = ", ".join(str(item) for item in exc.detail)
-        elif isinstance(exc.detail, ErrorDetail):
-            log_message = str(exc.detail)
-        elif isinstance(exc.detail, dict):
-            log_message = ", ".join(str(error) for errors in exc.detail.values() for error in
-                                    (errors if isinstance(errors, list) else [errors]))
+        match exc.detail:
+            case list():
+                log_message = ", ".join(str(item) for item in exc.detail)
+            case ErrorDetail():
+                log_message = str(exc.detail)
+            case dict():
+                log_message = ", ".join(
+                    str(error)
+                    for errors in exc.detail.values()
+                    for error in (errors if isinstance(errors, list) else [errors])
+                )
 
     logger.error(f"Произошла ошибка: {log_message}")
 

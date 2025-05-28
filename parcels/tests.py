@@ -106,8 +106,8 @@ class ParcelAPITest(APITestCase):
         ParcelType.objects.create(name='Электроника')
         response = self.client.get(reverse('parcel_types'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]['name'], 'Одежда')
+        self.assertEqual(len(response.data), 4)
+        self.assertEqual(response.data["results"][0]["name"], "Одежда")
 
     def test_get_parcels(self):
         """Проверка получения списка посылок."""
