@@ -1,7 +1,7 @@
 # Общие настройки
 line-length = 88
 indent-width = 4
-
+fix = true
 # Исключения
 exclude = [
     ".git",
@@ -9,8 +9,8 @@ exclude = [
     ".venv",
     "build",
     "dist",
-    "migrations",  # Добавлено для Alembic
-    "alembic",     # Добавлено для миграций
+    ".env",
+    "migrations"
 ]
 
 # Настройки линтинга
@@ -31,12 +31,16 @@ ignore = [
     "F401",  # Неиспользуемые импорты (может мешать в __init__.py)
     "B008",  # Мутирующие аргументы по умолчанию (иногда нужно в FastAPI)
     "A003",  # Переопределение встроенных имен (может быть оправдано)
+    "RUF001",  # Неиспользуемые импорты с кириллицей
+    "RUF002",  # Неиспользуемые переменные с кириллицей
+    "RUF003",  # Неиспользуемые аргументы функций с кириллицей
+    "RUF004",  # Неиспользуемые исключения с кириллицей
 ]
 
 # Специальные исключения для тестов
 [lint.per-file-ignores]
-"**/tests/*.py" = ["S101"]  # Разрешить assert в тестах
-"**/migrations/*.py" = ["E501", "F401"]  # Игнорировать в миграциях
+"parcels/tests/*.py" = ["S101"]  # Разрешить assert в тестах
+"parcels/migrations/*.py" = ["E501", "F401"]  # Игнорировать в миграциях
 
 # Настройки форматирования
 [format]
@@ -44,7 +48,3 @@ indent-style = "space"
 quote-style = "double"
 skip-magic-trailing-comma = false
 
-# Дополнительно для FastAPI
-[lint.isort]
-known-first-party = ["fastapi_project"]  # Ваше название пакета
-required-imports = ["from __future__ import annotations"]

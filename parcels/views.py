@@ -1,10 +1,12 @@
 import logging
+
 from django.core.cache import cache
-from django.shortcuts import render, redirect
-from rest_framework import status, generics
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.shortcuts import redirect, render
+from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .models import Parcel, ParcelType
 from .serializers import ParcelSerializer, ParcelTypeSerializer
 
@@ -33,7 +35,7 @@ class RegisterParcelView(APIView):
     def post(self, request):
         session_key = get_or_create_session_key(request)
         data = request.data.copy()
-        data['session_key'] = session_key
+        data["session_key"] = session_key
 
         serializer = ParcelSerializer(data=data)
         if serializer.is_valid():
@@ -82,51 +84,51 @@ def register_parcel_web(request):
     """Веб-страница для регистрации посылки."""
     session_key = get_or_create_session_key(request)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         data = {
-            'name': request.POST.get('name'),
-            'weight': request.POST.get('weight'),
-            'type': request.POST.get('type'),
-            'value': request.POST.get('value'),
-            'session_key': session_key
+            "name": request.POST.get("name"),
+            "weight": request.POST.get("weight"),
+            "type": request.POST.get("type"),
+            "value": request.POST.get("value"),
+            "session_key": session_key
         }
         serializer = ParcelSerializer(data=data)
         if serializer.is_valid():
             parcel = serializer.save()
             logger.info(f"Посылка {parcel.id} зарегистрирована через веб для сессии {session_key}")
-            return redirect('parcel_list_web')
+            return redirect("parcel_list_web")
         else:
             logger.error(f"Ошибка регистрации через веб: {serializer.errors}")
-            return render(request, 'register_parcel.html', {'errors': serializer.errors, 'types': ParcelType.objects.all()})
+            return render(request, "register_parcel.html", {"errors": serializer.errors, "types": ParcelType.objects.all()})
 
-    return render(request, 'register_parcel.html', {'types': ParcelType.objects.all()})
+    return render(request, "register_parcel.html", {"types": ParcelType.objects.all()})
 
 def parcel_list_web(request):
     """Веб-страница со списком посылок."""
     session_key = get_or_create_session_key(request)
     parcels = Parcel.objects.filter(session_key=session_key)
 
-    type_filter = request.GET.get('type', None)
-    cost_calculated = request.GET.get('cost_calculated', None)
+    type_filter = request.GET.get("type", None)
+    cost_calculated = request.GET.get("cost_calculated", None)
 
     if type_filter:
         parcels = parcels.filter(type__id=type_filter)
-    if cost_calculated == 'true':
+    if cost_calculated == "true":
         parcels = parcels.exclude(delivery_cost__isnull=True)
-    elif cost_calculated == 'false':
+    elif cost_calculated == "false":
         parcels = parcels.filter(delivery_cost__isnull=True)
 
-    return render(request, 'parcel_list.html', {
-        'parcels': parcels,
-        'types': ParcelType.objects.all(),
-        'type_filter': type_filter,
-        'cost_calculated': cost_calculated
+    return render(request, "parcel_list.html", {
+        "parcels": parcels,
+        "types": ParcelType.objects.all(),
+        "type_filter": type_filter,
+        "cost_calculated": cost_calculated
     })
 
 def parcel_types_web(request):
     """Веб-страница со списком типов посылок."""
     types = ParcelType.objects.all()
-    return render(request, 'parcel_types.html', {'types': types})
+    return render(request, "parcel_types.html", {"types": types})
 
 def parcel_detail_web(request, parcel_id):
     """Веб-страница с деталями посылки."""
@@ -134,7 +136,7 @@ def parcel_detail_web(request, parcel_id):
 
     try:
         parcel = Parcel.objects.get(id=parcel_id, session_key=session_key)
-        return render(request, 'parcel_detail.html', {'parcel': parcel})
+        return render(request, "parcel_detail.html", {"parcel": parcel})
     except Parcel.DoesNotExist:
         logger.warning(f"Посылка {parcel_id} не найдена для сессии {session_key}")
-        return render(request, 'parcel_detail.html', {'error': 'Посылка не найдена'})
+        return render(request, "parcel_detail.html", {"error": "Посылка не найдена"})
