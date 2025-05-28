@@ -1,7 +1,8 @@
-from rest_framework.views import exception_handler
+import logging
+
 from rest_framework.exceptions import ErrorDetail, ValidationError
 from rest_framework.response import Response
-import logging
+from rest_framework.views import exception_handler
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +12,8 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
     if response is not None:
         if isinstance(response.data, dict):
-            if 'detail' in response.data:
-                detail = response.data['detail']
+            if "detail" in response.data:
+                detail = response.data["detail"]
                 if isinstance(detail, ErrorDetail):
                     detail = str(detail)
             else:
@@ -28,18 +29,18 @@ def custom_exception_handler(exc, context):
                 response.data)
 
         response.data = {
-            'status': 'error',
-            'detail': detail,
-            'code': response.status_code
+            "status": "error",
+            "detail": detail,
+            "code": response.status_code
         }
     else:
         # Непредусмотренные исключения
-        detail = str(exc) if str(exc) else 'Внутренняя ошибка сервера'
+        detail = str(exc) if str(exc) else "Внутренняя ошибка сервера"
         response = Response(
             {
-                'status': 'error',
-                'detail': detail,
-                'code': 500
+                "status": "error",
+                "detail": detail,
+                "code": 500
             },
             status=500
         )
@@ -47,14 +48,17 @@ def custom_exception_handler(exc, context):
     # Формируем сообщение для логирования
     log_message = str(exc)
     if isinstance(exc, ValidationError):
-        if isinstance(exc.detail, list):
-            log_message = ", ".join(str(item) for item in exc.detail)
-        elif isinstance(exc.detail, ErrorDetail):
-            log_message = str(exc.detail)
-        elif isinstance(exc.detail, dict):
-            log_message = ", ".join(str(error) for errors in exc.detail.values() for error in
-                                    (errors if isinstance(errors, list) else [errors]))
-
+        match exc.detail:
+            case list():
+                log_message = ", ".join(str(item) for item in exc.detail)
+            case ErrorDetail():
+                log_message = str(exc.detail)
+            case dict():
+                log_message = ", ".join(
+                    str(error)
+                    for errors in exc.detail.values()
+                    for error in (errors if isinstance(errors, list) else [errors])
+                )
     logger.error(f"Произошла ошибка: {log_message}")
 
     return response

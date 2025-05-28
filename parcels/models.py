@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class ParcelType(models.Model):
     """Типы посылок: одежда, электроника, разное."""
     name = models.CharField(max_length=50, unique=True)
